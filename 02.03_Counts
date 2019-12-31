@@ -1,0 +1,150 @@
+
+
+import pandas as pd
+import json
+
+
+# In[4]:
+
+
+def load_json_df(filename, num_bytes = -1):
+    '''Load the first `num_bytes` of the filename as a json blob, convert each line into a row in a Pandas data frame.'''
+    fs = open(filename, 'rt', encoding = 'UTF8')
+    df = pd.DataFrame([json.loads(x) for x in fs.readlines(num_bytes)])
+    fs.close()
+    return df
+
+
+# In[18]:
+
+
+biz_f = open('yelp_academic_dataset_business.json', encoding = 'UTF8')
+biz_df = pd.DataFrame([json.loads(x) for x in biz_f.readlines()])
+biz_f.close()
+
+
+# In[21]:
+
+
+biz_df['review_count'].max()
+
+
+# In[22]:
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+get_ipython().run_line_magic('matplotlib', 'notebook')
+
+
+# In[23]:
+
+
+sns.set_style('whitegrid')
+fig,ax = plt.subplots()
+biz_df['review_count'].hist(ax = ax, bins = 100)
+ax.set_yscale('log')
+ax.tick_params(labelsize = 14)
+ax.set_xlabel('Review Counts', fontsize = 14)
+ax.set_ylabel('Occurrence', fontsize = 14)
+
+
+# In[27]:
+
+
+q_step = np.arange(.1,1,.1)
+deciles = biz_df['review_count'].quantile(q_step)
+deciles
+
+
+# In[30]:
+
+
+sns.set_style('whitegrid')
+fig,ax = plt.subplots()
+biz_df['review_count'].hist(ax = ax, bins = 100)
+for pos in deciles:
+    handle = plt.axvline(pos, color = 'r')
+ax.legend([handle], ['deciles'], fontsize = 14)
+ax.set_yscale('log')
+ax.set_xscale('log')
+ax.tick_params(labelsize = 14)
+ax.set_xlabel('Review Counts', fontsize = 14)
+ax.set_ylabel('Occurrence', fontsize = 14)
+
+
+# In[31]:
+
+
+y = np.arange(0.00001, 3, 0.01)
+x = np.power(10, y)
+
+
+# In[40]:
+
+
+fig, ax = plt.subplots()
+plt.plot(x, y, 'b')
+#ax.tick_params(labelsize = 10)
+ax.set_xlabel('x', fontsize = 14)
+ax.set_ylabel('log10(x)', fontsize = 14)
+
+
+# In[41]:
+
+
+log_review_count = np.log10(biz_df['review_count'] + 1)
+
+
+# In[47]:
+
+
+plt.figure()
+ax = plt.subplot(2,1,1)
+biz_df['review_count'].hist(ax = ax, bins = 100)
+ax.set_xlabel('review_count')
+ax.set_ylabel('Occurrence')
+
+ax = plt.subplot(2,1,2)
+log_review_count.hist(ax = ax, bins = 100)
+ax.set_xlabel('log10(review_count)')
+ax.set_ylabel('Occurrence')
+
+
+# In[48]:
+
+
+biz_df
+
+
+# In[54]:
+
+
+biz_df['log_review_count'] = np.log(biz_df['review_count'] + 1)
+
+
+# In[60]:
+
+
+from sklearn import linear_model
+from sklearn.model_selection import cross_validate
+from sklearn.model_selection import train_test_split
+
+biz_train, biz_validate = train_test_split(biz_df, test_size=0.2)
+
+
+
+from sklearn.linear_model import LinearRegression
+m1 = LinearRegression()
+m1.fit(biz_train[['log_review_count']], biz_train['stars'])
+m2 = LinearRegression()
+m2.fit(biz_train[['review_count']], biz_train['stars'])
+
+
+
+print("Residual sum of squares: %.5f"
+      % np.mean((m1.predict(biz_validate[['log_review_count']]) - biz_validate['stars']) ** 2))
+
+
+print("Residual sum of squares: %.5f"
+      % np.mean((m2.predict(biz_validate[['review_count']]) - biz_validate['stars']) ** 2))
