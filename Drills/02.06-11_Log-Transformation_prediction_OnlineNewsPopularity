@@ -1,0 +1,88 @@
+#! 02.06-11_Log-Transformation_prediction_OnlineNewsPopularity
+# coding: utf-8
+
+# In[1]:
+
+
+
+import pandas as pd
+import numpy as np
+import json
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+get_ipython().run_line_magic('matplotlib', 'notebook')
+sns.set_style('whitegrid')
+
+from sklearn import linear_model
+from sklearn.model_selection import cross_val_score
+
+
+# In[14]:
+
+
+df = pd.read_csv('OnlineNewsPopularity.csv', delimiter=', ')
+
+
+# In[15]:
+
+
+df
+
+
+# In[19]:
+
+
+df['log_n_tokens_content'] = np.log10(df['n_tokens_content'] + 1)
+
+
+# In[20]:
+
+
+news_orig_model = linear_model.LinearRegression()
+scores_orig = cross_val_score(news_orig_model, df[['n_tokens_content']], df['shares'], cv=10)
+
+news_log_model = linear_model.LinearRegression()
+scores_log = cross_val_score(news_log_model, df[['log_n_tokens_content']], df['shares'], cv=10)
+
+print("R-squared score without log transform: %0.5f (+/- %0.5f)" % (scores_orig.mean(), scores_orig.std() * 2))
+
+print("R-squared score with log transform: %0.5f (+/- %0.5f)" % (scores_log.mean(), scores_log.std() * 2))
+
+
+# In[24]:
+
+
+plt.figure()
+ax = plt.subplot(2,1,1)
+df['n_tokens_content'].hist(ax = ax, bins = 100)
+ax.set_xlabel('No. of words in Article', fontsize = 14)
+ax.set_ylabel('No. of Article', fontsize = 14)
+
+plt.figure()
+ax = plt.subplot(2,1,2)
+df['log_n_tokens_content'].hist(ax = ax, bins = 100)
+ax.set_xlabel('Log No. of words in Article', fontsize = 14)
+ax.set_ylabel('No. of Article', fontsize = 14)
+
+
+# In[28]:
+
+
+plt.figure()
+ax1 = plt.subplot(2,1,1)
+ax1.scatter(df['n_tokens_content'], df['shares'])
+ax1.set_xlabel('No. of words in Article', fontsize = 14)
+ax1.set_ylabel('No. of Article', fontsize = 14)
+
+ax2 = plt.subplot(2,1,2)
+ax2.scatter(df['log_n_tokens_content'], df['shares'])
+ax2.set_xlabel('Log No. of words in Article', fontsize = 14)
+ax2.set_ylabel('No. of Article', fontsize = 14)
+
+
+# In[ ]:
+
+
+
+
